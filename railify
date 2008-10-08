@@ -8,13 +8,20 @@
 # See http://github.com/foca/utility_scripts/ for the latest version
 # Released under a WTFP license (http://sam.zoy.org/wtfpl/)
 
-RAILS_SVN_CHECKOUT = '/Users/foca/Rails/_rails'
+RAILS_GIT_CHECKOUT = "#{ENV['HOME']}/Code/Ruby/rails"
+
+class Hash
+  def to_hash_string
+    ret = map{|k,v| ":#{k} => '#{v}'"}
+    ret.empty? ? nil : ret.join(", ")
+  end
+end
 
 module Helpers
   LINE = 80
 
   def announcing(msg)
-    print msg
+    puts msg
     yield
     print "." * (LINE - msg.size - 6)
     puts "\e[32m[DONE]\e[0m"
@@ -22,11 +29,12 @@ module Helpers
 
   def silent(command)
     system "#{command} &> /dev/null"
+    sleep 2
   end
 
   def templates
-    { :gitignore => %w[config/database.yml tmp/* log/*.log db/*.sqlite3 db/schema.rb public/stylesheets/application.css] * "\n",
-      :routes    => ["ActionController::Routing::Routes.draw do |map|", "end"] * "\n" }
+    { :gitignore => %w[config/database.yml tmp/* log/*.log db/*.sqlite3 db/schema.rb] * "\n",
+     :routes => ["ActionController::Routing::Routes.draw do |map|", "end"] * "\n" }
   end
 
   def git(message)
@@ -34,28 +42,45 @@ module Helpers
     silent "git commit -m '#{message}'"
   end
 
-  def braid(repo, dir, type="svn")
-    silent "braid add #{repo} --type #{type} #{dir}"
-    silent "git merge braid/track"
-  end
-
   def rake(task, args={})
     args = args.map {|name,value| "#{name.to_s.upcase}=#{value}"}.join(" ")
     silent "rake #{task} #{args}"
   end
+
+  def rails_default_environment
+    @rails_default_environment ||= File.open("config/environment.rb") do |file|
+      file.readlines
+    end
+  end
+
+  def gems_index
+    rails_default_environment.index(rails_default_environment.grep(/config\.gem/).last) + 1
+  end
+
+  def add_gem_to_config(name, options={})
+    gem_line = (["  config.gem '#{name}'"] + [options.to_hash_string]).compact.join(", ") << "\n"
+    @rails_default_environment = rails_default_environment.insert(gems_index, gem_line)
+  end
+
+  def write_config
+    if @rails_default_environment
+      File.open("config/environment.rb", "w") {|f| f << @rails_default_environment }
+    end
+  end
 end
 
 if __FILE__ == $0
+  require 'fileutils'
   include Helpers
 
-  app_name  = ARGV.first
+  app_name = ARGV.first
 
   announcing "Fetching EDGE rails" do
-    Dir.chdir(RAILS_SVN_CHECKOUT) { silent "svn update" }
+   Dir.chdir(RAILS_GIT_CHECKOUT) { silent "git pull" }
   end
 
   announcing "Creating application layout" do
-    silent "ruby #{RAILS_SVN_CHECKOUT}/railties/bin/rails #{app_name}"
+   silent "ruby #{RAILS_GIT_CHECKOUT}/railties/bin/rails #{app_name}"
   end
 
   Dir.chdir(app_name) do
@@ -64,51 +89,52 @@ if __FILE__ == $0
       silent "rm public/index.html"
       silent "rm log/*.log"
       silent "rm public/images/rails.png"
-      silent "cp config/database.{,sample.}yml"
+      silent "cp config/database.yml config/database.sample.yml"
       silent "rm -r test"
       File.open("config/routes.rb", "w") {|f| f << templates[:routes] }
-    end
-
-    announcing "Creating databases" do
-      rake "db:create"
-      rake "db:create", :rails_env => "test"
     end
 
     announcing "Configuring git repo" do
       silent "git init"
       File.open(".gitignore", "w") {|f| f << templates[:gitignore] }
-      silent "touch {tmp,log}/.gitignore"
+      silent "touch tmp/.gitignore"
+      silent "touch log/.gitignore"
       git "Basic rails app structure"
     end
 
     announcing "Freezing rails" do
-      braid "http://dev.rubyonrails.org/svn/rails/trunk", "vendor/rails"
+      FileUtils.cp_r RAILS_GIT_CHECKOUT, 'vendor/rails'
+      Dir.chdir('vendor/rails') do
+        FileUtils.rm_rf %w(Rakefile cleanlogs.sh pushgems.rb release.rb ci doc)
+        system "git --no-pager --git-dir=/Users/santuri/Code/Ruby/rails/.git log -n 1 --pretty=format:%H > REVISION"
+      end
     end
 
-    announcing "Installing GemsOnrails" do
-      silent "gemsonrails"
-      git "Froze GemsOnRails plugin"
+    announcing "Adding gems to config" do
+      add_gem_to_config "rspec-rails", :lib => "spec"
+      add_gem_to_config "haml"
+      #add_gem_to_config "annotate-models" - annotate-models not working with edge rails 
+      write_config
+      git "Adding gems to config"
     end
 
-    announcing "Installing haml" do
-      silent "haml --rails ."
-      rake "gems:freeze", :gem => "haml"
-      git "Froze haml gem and plugin"
+    announcing "Installing gems" do
+      rake "gems:install"
     end
 
-    announcing "Installing RSpec" do
-      braid "http://rspec.rubyforge.org/svn/trunk/rspec", "vendor/plugins/rspec"
-      braid "http://rspec.rubyforge.org/svn/trunk/rspec_on_rails", "vendor/plugins/rspec_on_rails"
+    announcing "Unpacking gems" do
+      rake "gems:unpack"
+      git "unpacking gems"
     end
 
     announcing "Generating RSpec base files" do
       silent "script/generate rspec"
-      git "Added RSpec base files"
+      git "Adding RSpec base files"
     end
 
-    announcing "Installing make_resourceful" do
-      braid "http://svn.hamptoncatlin.com/make_resourceful/trunk", "vendor/plugins/make_resourceful"
+    announcing "Installing haml" do
+      silent "haml --rails ."
+      git "Freezing haml gem and plugin"
     end
   end
-
 end
