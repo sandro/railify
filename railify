@@ -3,7 +3,7 @@
 # Fork of Foca's railify utility script (git://github.com/foca/utility_scripts.git)
 #
 # Generates a rails app (using EDGE rails), sets up a git repo for it, installs
-# haml, and rspec
+# haml, resources_controller, reponse_for, and rspec
 #
 # USAGE: $0 some_app_name
 #
@@ -24,7 +24,7 @@ module Helpers
 
   def announcing(msg)
     puts msg
-    yield
+    yield msg
     print "." * (LINE - msg.size - 6)
     puts "\e[32m[DONE]\e[0m"
   end
@@ -137,6 +137,12 @@ if __FILE__ == $0
     announcing "Installing haml" do
       silent "haml --rails ."
       git "Freezing haml gem and plugin"
+    end
+
+    announcing "Installing resources controller and response_for" do |message|
+      silent "script/plugin install git://github.com/ianwhite/resources_controller.git"
+      silent "script/plugin install git://github.com/ianwhite/response_for.git"
+      git message
     end
   end
 end
