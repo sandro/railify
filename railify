@@ -31,7 +31,6 @@ module Helpers
 
   def silent(command)
     system "#{command} &> /dev/null"
-    sleep 2
   end
 
   def templates
@@ -87,14 +86,8 @@ if __FILE__ == $0
 
   Dir.chdir(app_name) do
     announcing "Setting up rails app" do
-      # use fileutils instead of silent
-      silent "rm README"
-      silent "rm public/index.html"
-      silent "rm log/*.log"
-      silent "rm public/images/rails.png"
+      FileUtils.rm_rf %w(README public/index.html public/images/rails.png test)
       silent "cp config/database.yml config/database.sample.yml"
-      silent "rm -r test"
-      silent "touch config/development.log"
       File.open("config/routes.rb", "w") {|f| f << templates[:routes] }
     end
 
@@ -117,7 +110,7 @@ if __FILE__ == $0
     announcing "Adding gems to config" do
       add_gem_to_config "rspec-rails", :lib => "spec"
       add_gem_to_config "haml"
-      #add_gem_to_config "annotate-models" - annotate-models not working with edge rails 
+      add_gem_to_config "annotate-models", :lib => "annotate_models"
       write_config
       git "Adding gems to config"
     end
@@ -145,6 +138,10 @@ if __FILE__ == $0
       silent "script/plugin install git://github.com/ianwhite/resources_controller.git"
       silent "script/plugin install git://github.com/ianwhite/response_for.git"
       git message
+    end
+
+    announcing "Clearing logs" do
+      rake "log:clear"
     end
   end
 end
