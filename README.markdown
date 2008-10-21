@@ -12,7 +12,7 @@ Features
 
 Forked
 ------
-New Features / Changes  
+New Features / Changes
  - No longer uses braid
  - Git no longer ignores application.css (does not assume that sass is being used to generate it)
  - Uses FileUtils for mass removal of unnecessary files
