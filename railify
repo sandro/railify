@@ -3,7 +3,7 @@
 # Fork of Foca's railify utility script (git://github.com/foca/utility_scripts.git)
 #
 # Generates a rails app (using EDGE rails), sets up a git repo for it, installs
-# haml, resources_controller, reponse_for, and rspec
+# haml, annotate_models, and rspec
 #
 # USAGE: $0 some_app_name
 #
@@ -103,8 +103,12 @@ if __FILE__ == $0
       FileUtils.cp_r RAILS_GIT_CHECKOUT, 'vendor/rails'
       Dir.chdir('vendor/rails') do
         FileUtils.rm_rf %w(Rakefile cleanlogs.sh pushgems.rb release.rb ci doc)
-        system "git --no-pager --git-dir=#{RAILS_GIT_CHECKOUT}/.git log -n 1 --pretty=format:%H > REVISION"
+        system "git --no-pager --git-dir=#{RAILS_GIT_CHECKOUT}/.git log -n 1 --pretty=fuller > REVISION"
       end
+    end
+
+    announcing "Creating databases" do
+      rake "db:create:all"
     end
 
     announcing "Adding gems to config" do
@@ -132,12 +136,6 @@ if __FILE__ == $0
     announcing "Installing haml" do
       silent "haml --rails ."
       git "Freezing haml gem and plugin"
-    end
-
-    announcing "Installing resources controller and response_for" do |message|
-      silent "script/plugin install git://github.com/ianwhite/resources_controller.git"
-      silent "script/plugin install git://github.com/ianwhite/response_for.git"
-      git message
     end
 
     announcing "Clearing logs" do
