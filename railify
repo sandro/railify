@@ -112,7 +112,7 @@ if __FILE__ == $0
     end
 
     announcing "Adding gems to config" do
-      add_gem_to_config "rspec-rails", :lib => "spec"
+      add_gem_to_config "rspec-rails", :lib => "spec", :version => '>= 1.1.11'
       add_gem_to_config "haml"
       add_gem_to_config "annotate-models", :lib => "annotate_models"
       write_config
