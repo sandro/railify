@@ -87,7 +87,7 @@ if __FILE__ == $0
   Dir.chdir(app_name) do
     announcing "Setting up rails app" do
       FileUtils.rm_rf %w(README public/index.html public/images/rails.png test)
-      silent "cp config/database.yml config/database.sample.yml"
+      silent "cp config/database.yml config/database.yml.example"
       File.open("config/routes.rb", "w") {|f| f << templates[:routes] }
     end
 
@@ -121,11 +121,6 @@ if __FILE__ == $0
 
     announcing "Installing gems" do
       %x(sudo rake gems:install)
-    end
-
-    announcing "Unpacking gems" do
-      rake "gems:unpack"
-      git "unpacking gems"
     end
 
     announcing "Generating RSpec base files" do
