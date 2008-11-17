@@ -102,7 +102,7 @@ if __FILE__ == $0
     announcing "Freezing rails" do
       FileUtils.cp_r RAILS_GIT_CHECKOUT, 'vendor/rails'
       Dir.chdir('vendor/rails') do
-        FileUtils.rm_rf %w(Rakefile cleanlogs.sh pushgems.rb release.rb ci doc)
+        FileUtils.rm_rf %w(Rakefile cleanlogs.sh pushgems.rb release.rb ci doc .gitignore .git)
         system "git --no-pager --git-dir=#{RAILS_GIT_CHECKOUT}/.git log -n 1 --pretty=fuller > REVISION"
       end
     end
