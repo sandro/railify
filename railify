@@ -34,8 +34,12 @@ module Helpers
   end
 
   def templates
-    { :gitignore => %w[config/database.yml tmp/* log/*.log db/*.sqlite3 db/schema.rb] * "\n",
-     :routes => ["ActionController::Routing::Routes.draw do |map|", "end"] * "\n" }
+    {
+      :gitignore => %w[config/database.yml tmp/* log/*.log db/*.sqlite3 db/schema.rb vendor/rails] * "\n",
+      :routes => ["ActionController::Routing::Routes.draw do |map|", "end"] * "\n",
+      :database_dev => {"development"=>{"username"=>"root", "adapter"=>"mysql", "database"=>"#{@app_name}_development", "password"=>nil}},
+      :database_test => {"test"=>{"username"=>"root", "adapter"=>"mysql", "database"=>"#{@app_name}_test", "password"=>nil}}
+    }
   end
 
   def git(message)
@@ -72,23 +76,25 @@ end
 
 if __FILE__ == $0
   require 'fileutils'
+  require 'YAML'
   include Helpers
 
-  app_name = ARGV.first
+  @app_name = ARGV.first
 
   announcing "Fetching EDGE rails" do
    Dir.chdir(RAILS_GIT_CHECKOUT) { silent "git pull" }
   end
 
   announcing "Creating application layout" do
-   silent "ruby #{RAILS_GIT_CHECKOUT}/railties/bin/rails #{app_name}"
+   silent "ruby #{RAILS_GIT_CHECKOUT}/railties/bin/rails #{@app_name}"
   end
 
-  Dir.chdir(app_name) do
+  Dir.chdir(@app_name) do
     announcing "Setting up rails app" do
       FileUtils.rm_rf %w(README public/index.html public/images/rails.png test)
+      File.open("config/database.yml", "w") {|f| f << templates[:database_dev].merge(templates[:database_test]).to_yaml}
+      File.open("config/routes.rb", "w") {|f| f << templates[:routes]}
       silent "cp config/database.yml config/database.yml.example"
-      File.open("config/routes.rb", "w") {|f| f << templates[:routes] }
     end
 
     announcing "Configuring git repo" do
@@ -99,7 +105,7 @@ if __FILE__ == $0
       git "Basic rails app structure"
     end
 
-    announcing "Freezing rails" do
+    announcing "Vendoring rails" do
       FileUtils.cp_r RAILS_GIT_CHECKOUT, 'vendor/rails'
       Dir.chdir('vendor/rails') do
         FileUtils.rm_rf %w(Rakefile cleanlogs.sh pushgems.rb release.rb ci doc .gitignore .git)
@@ -130,7 +136,7 @@ if __FILE__ == $0
 
     announcing "Installing haml" do
       silent "haml --rails ."
-      git "Freezing haml gem and plugin"
+      git "Installing haml gem and plugin"
     end
 
     announcing "Clearing logs" do
