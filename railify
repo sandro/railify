@@ -82,7 +82,7 @@ if __FILE__ == $0
   @app_name = ARGV.first
 
   announcing "Fetching EDGE rails" do
-   Dir.chdir(RAILS_GIT_CHECKOUT) { silent "git pull" }
+   Dir.chdir(RAILS_GIT_CHECKOUT) { silent "git stash && git pull && git stash pop" }
   end
 
   announcing "Creating application layout" do
