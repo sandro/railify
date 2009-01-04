@@ -8,7 +8,7 @@ Features
  - Initializes a git repo with the standard `.gitignore` for rails development
  - Creates mysql databases with `rake db:create:all`
  - Copies Edge into `vendor/rails`
- - Installs and sets up `rspec, haml, and annotate_models`
+ - Installs and sets up `rspec, haml, and resource_controller`
 
 Forked
 ------
