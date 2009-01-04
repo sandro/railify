@@ -3,7 +3,7 @@
 # Fork of Foca's railify utility script (git://github.com/foca/utility_scripts.git)
 #
 # Generates a rails app (using EDGE rails), sets up a git repo for it, installs
-# haml, annotate_models, and rspec
+# rspec, haml, and resource_controller
 #
 # USAGE: $0 some_app_name
 #
@@ -120,7 +120,7 @@ if __FILE__ == $0
     announcing "Adding gems to config" do
       add_gem_to_config "rspec-rails", :lib => "spec", :version => '>= 1.1.11'
       add_gem_to_config "haml"
-      add_gem_to_config "annotate-models", :lib => "annotate_models"
+      add_gem_to_config 'giraffesoft-resource_controller', :lib => 'resource_controller', :source => "http://gems.github.com"
       write_config
       git "Adding gems to config"
     end
