@@ -35,7 +35,7 @@ module Helpers
 
   def templates
     {
-      :gitignore => %w[config/database.yml db/*.sqlite3 vendor/rails log/*.log tmp/**/* .DS_STORE] * "\n",
+      :gitignore => %w[config/database.yml config/settings.yml db/*.sqlite3 vendor/rails log/*.log tmp/**/* .DS_STORE] * "\n",
       :routes => ["ActionController::Routing::Routes.draw do |map|", "end"] * "\n",
       :database_dev => {"development"=>{"username"=>"root", "adapter"=>"mysql", "database"=>"#{@app_name}_development", "password"=>nil}},
       :database_test => {"test"=>{"username"=>"root", "adapter"=>"mysql", "database"=>"#{@app_name}_test", "password"=>nil}}
